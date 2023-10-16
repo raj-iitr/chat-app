@@ -1,18 +1,23 @@
 <template>
   <div v-if="isUser">
-    <input id="msg" type="text" />
-    <p></p>
-    <button v-if="isUser" @click="createUser()">Start chatting</button>
-    <button v-if="isUser" @click="logIn()">LogIn</button>
-    <button v-if="isUser" @click="logOut()">LogOut</button>
-    <button v-if="isUser" @click="sendMsg()">send</button>
-    <!-- <button v-if="isUser" @click="createMsgListener()">listen</button> -->
+    Name :
+    <input
+      type="text"
+      placeholder="Please enter your name"
+      id="userName"
+    /><br />
+    <button @click="createUser()">Sign Up</button><br />
+    <button @click="logIn()">Log In</button>
   </div>
-  <!-- <div v-else>
-    <p id="chats">Chats will be visible here</p>
-    <input id="msg" type="text" placeholder="Enter your message" />
-    <input id="sendBtn" type="button" value="send" />
-  </div> -->
+  <div v-if="!isUser">
+    {{ Welcome }} Ji!<br />
+    <button @click="logOut()">Log Out</button>
+    <p></p>
+    Whom do you want to send msg?
+    <input id="receiverName" type="text" placeholder="Type his/her name" />
+    <input id="msg" type="text" placeholder="Write your msg" />
+    <button @click="sendMsg()">send</button>
+  </div>
 </template>
 
 <script setup>
@@ -22,7 +27,7 @@ import { CometChat } from "@cometchat-pro/chat";
 
 var authKey = "Addfa544c4278cff4eb8e833f06f731f5bf8af078";
 let isUser = ref(true);
-// let msgs = ref(" ");
+let Welcome = ref("Ram Ram");
 
 //Creating a user
 function createUser() {
@@ -39,42 +44,46 @@ function createUser() {
       metadata: {
         "@private": { email: "user@email.com", contactNumber: "0123456789" },
       },
-      uid: "user4",
-      name: "user4",
+      uid: userName,
+      name: userName,
     },
   };
   axios
     .request(options)
     .then(function (response) {
-      console.log(response.data);
+      response.data.data.status = "online";
+      console.log(
+        `User has been created successfully!`,
+        response.data.data.status
+      );
     })
+
     .catch(function (error) {
-      console.error(error);
+      if (error.code == "ERR_BAD_REQUEST") {
+        console.log(`User already exist!`);
+      }
     });
+
+  alert("User is created!");
 }
 
 //logging the user in
 function logIn() {
-  var UID = "user1";
+  let userName = document.getElementById("userName").value;
+  var UID = userName;
   var authKey = "ddfa544c4278cff4eb8e833f06f731f5bf8af078";
 
-  CometChat.getLoggedinUser().then(
+  CometChat.login(UID, authKey).then(
     (user) => {
-      if (!user) {
-        CometChat.login(UID, authKey).then(
-          (user) => {
-            console.log("Login Successful:", { user });
-          },
-          (error) => {
-            console.log("Login failed with exception:", { error });
-          }
-        );
-      }
+      console.log("Login Successful:");
+      // console.log("Login Successful:", { user });
     },
     (error) => {
-      console.log("Something went wrong", error);
+      console.log("Login failed with exception:", { error });
     }
   );
+
+  isUser.value = !isUser.value;
 }
 
 //log out the user
@@ -87,12 +96,14 @@ function logOut() {
       console.log("Logout failed with exception:", { error });
     }
   );
+
+  isUser.value = !isUser.value;
 }
 
 //create msg listener
-// function createMsgListener() {
 onMounted(() => {
-  let listenerID = "user1";
+  let listener = document.getElementById("userName").value;
+  let listenerID = listener;
 
   CometChat.addMessageListener(
     listenerID,
@@ -108,17 +119,17 @@ onMounted(() => {
 
   console.log("called");
 });
-// }
 
 //remove msg listener
 function removeMsgListener() {
-  let listenerID = "user1";
+  let listener = document.getElementById("userName").value;
+  let listenerID = listener;
   CometChat.removeMessageListener(listenerID);
 }
 
 //send the messages
 function sendMsg() {
-  let receiverID = "user1";
+  let receiverID = document.getElementById("receiverName").value;
   let messageText = document.getElementById("msg").value;
   let receiverType = CometChat.RECEIVER_TYPE.USER;
   let textMessage = new CometChat.TextMessage(
@@ -129,7 +140,8 @@ function sendMsg() {
 
   CometChat.sendMessage(textMessage).then(
     (message) => {
-      console.log("Message sent successfully:", message);
+      // console.log("Message sent successfully:", message);
+      console.log("Message sent successfully:");
       document.querySelector(
         "p"
       ).innerHTML += `<div>${message.sender.name}:${message.text}</div>`;
@@ -141,7 +153,8 @@ function sendMsg() {
 }
 
 onBeforeUnmount(() => {
-  let listenerID = "user1";
+  let listener = document.getElementById("userName").value;
+  let listenerID = listener;
   CometChat.removeMessageListener(listenerID);
   console.log("removed");
 });
